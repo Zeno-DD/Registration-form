@@ -1,12 +1,11 @@
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import ExcelJS from 'exceljs';
-import { isAdminSession } from '@/lib/admin';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
 export async function GET() {
-  if (!(await isAdminSession())) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  // Đã xóa phần kiểm tra đăng nhập (isAdminSession) để cho phép tải trực tiếp
 
   // Join registrations -> topics -> teachers
   const { data, error } = await supabaseAdmin()
@@ -66,7 +65,7 @@ export async function GET() {
   return new NextResponse(buf, {
     headers: {
       'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'Content-Disposition': 'attachment; filename="registrations.xlsx"',
+      'Content-Disposition': 'attachment; filename="Danh-sach-dang-ky.xlsx"',
       'Cache-Control': 'no-store',
     },
   });
