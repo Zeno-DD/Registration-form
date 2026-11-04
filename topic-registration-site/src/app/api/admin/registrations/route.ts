@@ -1,10 +1,5 @@
-export const dynamic = 'force-dynamic'; // THÊM DÒNG NÀY ĐỂ TẮT CACHE
-import { NextResponse } from 'next/server';
-import { isAdminSession } from '@/lib/admin';
-import { supabaseAdmin } from '@/lib/supabase-admin';
+export const dynamic = 'force-dynamic';
 
-export async function GET() {
-  // ... (giữ nguyên toàn bộ code cũ ở dưới)
 import { NextResponse } from 'next/server';
 import { isAdminSession } from '@/lib/admin';
 import { supabaseAdmin } from '@/lib/supabase-admin';
