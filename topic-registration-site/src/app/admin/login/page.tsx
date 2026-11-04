@@ -1,71 +1,100 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
-export default function AdminLoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+interface Registration {
+  id: number;
+  fullName: string;
+  email: string;
+  topic: string;
+  createdAt: string;
+}
+
+export default function AdminPage() {
+  const [data, setData] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(false);
 
-  async function handleLogin(e: React.FormEvent) {
-    e.preventDefault();
-    setError('');
+  // Giả lập tải danh sách khi vào trang admin
+  useEffect(() => {
+    // Bạn có thể fetch dữ liệu từ API get danh sách của bạn ở đây
+    setData([
+      { id: 1, fullName: 'Nguyễn Văn A', email: 'a@gmail.com', topic: 'Bảo mật ứng dụng Web', createdAt: '2026-06-01' },
+      { id: 2, fullName: 'Trần Thị B', email: 'b@gmail.com', topic: 'Kiểm thử xâm nhập mạng', createdAt: '2026-06-02' },
+    ]);
+  }, []);
+
+  const handleExportExcel = async () => {
     setLoading(true);
-
-    // Hardcode thông tin đăng nhập trực tiếp tại client/server action cho gọn
-    const ADMIN_EMAIL = 'vuhuyhoang357@gmail.com';
-    const ADMIN_PASSWORD = '123456@Password';
-
     try {
-      if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-        // Lưu trạng thái đăng nhập vào cookie đơn giản
-        document.cookie = "admin_logged_in=true; path=/; max-age=86400";
-        window.location.href = '/admin';
+      const res = await fetch('/api/admin/export');
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'Danh-sach-dang-ky.xlsx';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
       } else {
-        setError('Email hoặc mật khẩu quản trị không đúng.');
+        alert('Tải file thất bại.');
       }
     } catch {
-      setError('Lỗi kết nối. Vui lòng thử lại.');
+      alert('Lỗi kết nối.');
     } finally {
       setLoading(false);
     }
-  }
+  };
+
+  const handleLogout = () => {
+    document.cookie = 'admin_logged_in=; path=/; max-age=0';
+    window.location.href = '/admin/login';
+  };
 
   return (
-    <main style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', fontFamily: 'sans-serif', backgroundColor: '#f9fafb' }}>
-      <div style={{ padding: '2rem', background: '#fff', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', width: '100%', maxWidth: '400px' }}>
-        <h1 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', textAlign: 'center' }}>Đăng nhập quản trị</h1>
-        <form onSubmit={handleLogin}>
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Email quản trị</label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              style={{ width: '100%', padding: '0.75rem', borderRadius: '4px', border: '1px solid #d1d5db', boxSizing: 'border-box' }}
-            />
-          </div>
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Mật khẩu</label>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              style={{ width: '100%', padding: '0.75rem', borderRadius: '4px', border: '1px solid #d1d5db', boxSizing: 'border-box' }}
-            />
-          </div>
-          {error && <p style={{ color: 'red', marginBottom: '1rem', fontSize: '0.9rem', textAlign: 'center' }}>{error}</p>}
+    <main style={{ padding: '2rem', fontFamily: 'sans-serif', maxWidth: '1000px', margin: '0 auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+        <h1>Quản lý danh sách đăng ký đề tài</h1>
+        <div>
           <button
-            type="submit"
+            onClick={handleExportExcel}
             disabled={loading}
-            style={{ width: '100%', padding: '0.75rem', backgroundColor: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}
+            style={{ padding: '0.5rem 1rem', backgroundColor: '#16a34a', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', marginRight: '1rem', fontWeight: 'bold' }}
           >
-            {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+            {loading ? 'Đang tải xuống...' : 'Tải file Excel'}
           </button>
-        </form>
+          <button
+            onClick={handleLogout}
+            style={{ padding: '0.5rem 1rem', backgroundColor: '#dc2626', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+          >
+            Đăng xuất
+          </button>
+        </div>
+      </div>
+
+      <div style={{ background: '#fff', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+          <thead>
+            <tr style={{ background: '#f3f4f6', borderBottom: '1px solid #e5e7eb' }}>
+              <th style={{ padding: '0.75rem 1rem' }}>ID</th>
+              <th style={{ padding: '0.75rem 1rem' }}>Họ tên</th>
+              <th style={{ padding: '0.75rem 1rem' }}>Email</th>
+              <th style={{ padding: '0.75rem 1rem' }}>Đề tài đăng ký</th>
+              <th style={{ padding: '0.75rem 1rem' }}>Thời gian</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((item) => (
+              <tr key={item.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                <td style={{ padding: '0.75rem 1rem' }}>{item.id}</td>
+                <td style={{ padding: '0.75rem 1rem' }}>{item.fullName}</td>
+                <td style={{ padding: '0.75rem 1rem' }}>{item.email}</td>
+                <td style={{ padding: '0.75rem 1rem' }}>{item.topic}</td>
+                <td style={{ padding: '0.75rem 1rem' }}>{item.createdAt}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </main>
   );
