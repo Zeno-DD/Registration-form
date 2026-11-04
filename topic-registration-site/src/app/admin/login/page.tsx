@@ -14,13 +14,9 @@ export default function AdminPage() {
   const [data, setData] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Giả lập tải danh sách khi vào trang admin
+  // Khởi tạo danh sách trống, sẵn sàng nhận dữ liệu thực tế từ hệ thống/database của bạn
   useEffect(() => {
-    // Bạn có thể fetch dữ liệu từ API get danh sách của bạn ở đây
-    setData([
-      { id: 1, fullName: 'Nguyễn Văn A', email: 'a@gmail.com', topic: 'Bảo mật ứng dụng Web', createdAt: '2026-06-01' },
-      { id: 2, fullName: 'Trần Thị B', email: 'b@gmail.com', topic: 'Kiểm thử xâm nhập mạng', createdAt: '2026-06-02' },
-    ]);
+    setData([]);
   }, []);
 
   const handleExportExcel = async () => {
@@ -84,15 +80,23 @@ export default function AdminPage() {
             </tr>
           </thead>
           <tbody>
-            {data.map((item) => (
-              <tr key={item.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                <td style={{ padding: '0.75rem 1rem' }}>{item.id}</td>
-                <td style={{ padding: '0.75rem 1rem' }}>{item.fullName}</td>
-                <td style={{ padding: '0.75rem 1rem' }}>{item.email}</td>
-                <td style={{ padding: '0.75rem 1rem' }}>{item.topic}</td>
-                <td style={{ padding: '0.75rem 1rem' }}>{item.createdAt}</td>
+            {data.length === 0 ? (
+              <tr>
+                <td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>
+                  Chưa có dữ liệu đăng ký nào.
+                </td>
               </tr>
-            ))}
+            ) : (
+              data.map((item) => (
+                <tr key={item.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                  <td style={{ padding: '0.75rem 1rem' }}>{item.id}</td>
+                  <td style={{ padding: '0.75rem 1rem' }}>{item.fullName}</td>
+                  <td style={{ padding: '0.75rem 1rem' }}>{item.email}</td>
+                  <td style={{ padding: '0.75rem 1rem' }}>{item.topic}</td>
+                  <td style={{ padding: '0.75rem 1rem' }}>{item.createdAt}</td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
