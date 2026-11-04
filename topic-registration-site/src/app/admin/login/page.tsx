@@ -1,8 +1,20 @@
-'use client';
-import {useState} from 'react';
-import {createBrowserClient} from '@supabase/ssr';
-export default function Login(){
- const [email,setEmail]=useState(''),[password,setPassword]=useState(''),[msg,setMsg]=useState('');
- async function signIn(e:React.FormEvent){e.preventDefault();const supabase=createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!,process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);const {error}=await supabase.auth.signInWithPassword({email,password});if(error){setMsg('Đăng nhập thất bại.');return;}location.href='/admin';}
- return <main className="wrap"><div className="panel"><h1>Đăng nhập quản trị</h1><form onSubmit={signIn}><label className="field">Email quản trị<input type="email" required value={email} onChange={e=>setEmail(e.target.value)}/></label><label className="field">Mật khẩu<input type="password" required value={password} onChange={e=>setPassword(e.target.value)}/></label><button>Đăng nhập</button>{msg&&<p role="alert">{msg}</p>}</form></div></main>;
+// Trong file app/admin/login/page.tsx (hoặc file giao diện login tương ứng)
+async function handleLogin(e: React.FormEvent) {
+  e.preventDefault();
+  // ... các đoạn code gọi API đăng nhập hiện tại của bạn ...
+
+  const res = await fetch('/api/admin/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+
+  if (res.ok) {
+    // Đăng nhập thành công thì chuyển hướng ngay về trang quản trị admin
+    window.location.href = '/admin'; 
+    // Hoặc nếu dùng Next.js router: router.push('/admin');
+  } else {
+    // Hiển thị lỗi nếu có
+    setMessage('Đăng nhập thất bại.');
+  }
 }
