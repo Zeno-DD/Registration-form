@@ -1,13 +1,10 @@
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
-import { isAdminSession } from '@/lib/admin';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
 export async function GET() {
-  if (!(await isAdminSession())) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  // ĐÃ XÓA ĐOẠN KIỂM TRA ĐĂNG NHẬP (isAdminSession) Ở ĐÂY
 
   // Join registrations -> topics -> teachers để lấy tên đề tài và giáo viên
   const { data, error } = await supabaseAdmin()
