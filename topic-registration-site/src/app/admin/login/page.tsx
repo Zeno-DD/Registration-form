@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 
 interface Registration {
-  id: number;
+  id: string;
   fullName: string;
   email: string;
   topic: string;
@@ -14,9 +14,28 @@ export default function AdminPage() {
   const [data, setData] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Khởi tạo danh sách trống, sẵn sàng nhận dữ liệu thực tế từ hệ thống/database của bạn
+  // Đã sửa: Tự động gọi API lấy dữ liệu từ Supabase
   useEffect(() => {
-    setData([]);
+    async function fetchData() {
+      try {
+        const res = await fetch('/api/admin/registrations', { cache: 'no-store' });
+        if (res.ok) {
+          const result = await res.json();
+          // Chuyển đổi tên trường từ Backend (student_name) sang Frontend (fullName)
+          const formattedData = result.map((item: any) => ({
+            id: item.id,
+            fullName: item.student_name,
+            email: item.email,
+            topic: item.topic_title || 'Chưa có tên đề tài',
+            createdAt: new Date(item.created_at).toLocaleString('vi-VN')
+          }));
+          setData(formattedData);
+        }
+      } catch (error) {
+        console.error("Lỗi tải dữ liệu:", error);
+      }
+    }
+    fetchData();
   }, []);
 
   const handleExportExcel = async () => {
