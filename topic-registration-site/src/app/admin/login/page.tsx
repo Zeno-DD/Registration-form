@@ -13,18 +13,17 @@ export default function AdminLoginPage() {
     setError('');
     setLoading(true);
 
-    try {
-      const res = await fetch('/api/admin/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
+    // Hardcode thông tin đăng nhập trực tiếp tại client/server action cho gọn
+    const ADMIN_EMAIL = 'vuhuyhoang357@gmail.com';
+    const ADMIN_PASSWORD = '123456@Password';
 
-      if (res.ok) {
+    try {
+      if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+        // Lưu trạng thái đăng nhập vào cookie đơn giản
+        document.cookie = "admin_logged_in=true; path=/; max-age=86400";
         window.location.href = '/admin';
       } else {
-        const data = await res.json().catch(() => ({}));
-        setError(data.error || 'Đăng nhập thất bại.');
+        setError('Email hoặc mật khẩu quản trị không đúng.');
       }
     } catch {
       setError('Lỗi kết nối. Vui lòng thử lại.');
