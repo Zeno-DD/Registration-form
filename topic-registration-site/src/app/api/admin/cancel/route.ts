@@ -9,8 +9,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Thiếu thông tin ID đăng ký' }, { status: 400 });
     }
 
-    // Gọi hàm Postgres RPC (Đảm bảo tính Atomic và tự động xử lý logic)
-    const { error } = await supabaseAdmin.rpc('cancel_registration', {
+    // Đã thêm dấu () vào sau supabaseAdmin
+    const { error } = await supabaseAdmin().rpc('cancel_registration', {
       p_registration_id: registrationId
     });
 
