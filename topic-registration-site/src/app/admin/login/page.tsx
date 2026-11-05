@@ -13,30 +13,57 @@ interface Registration {
 export default function AdminPage() {
   const [data, setData] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  // Đã sửa: Tự động gọi API lấy dữ liệu từ Supabase
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const res = await fetch('/api/admin/registrations', { cache: 'no-store' });
-        if (res.ok) {
-          const result = await res.json();
-          // Chuyển đổi tên trường từ Backend (student_name) sang Frontend (fullName)
-          const formattedData = result.map((item: any) => ({
-            id: item.id,
-            fullName: item.student_name,
-            email: item.email,
-            topic: item.topic_title || 'Chưa có tên đề tài',
-            createdAt: new Date(item.created_at).toLocaleString('vi-VN')
-          }));
-          setData(formattedData);
-        }
-      } catch (error) {
-        console.error("Lỗi tải dữ liệu:", error);
+  async function fetchData() {
+    try {
+      const res = await fetch('/api/admin/registrations', { cache: 'no-store' });
+      if (res.ok) {
+        const result = await res.json();
+        const formattedData = result.map((item: any) => ({
+          id: item.id,
+          fullName: item.student_name,
+          email: item.email,
+          topic: item.topic_title || 'Chưa có tên đề tài',
+          createdAt: new Date(item.created_at).toLocaleString('vi-VN'),
+        }));
+        setData(formattedData);
       }
+    } catch (error) {
+      console.error('Lỗi tải dữ liệu:', error);
     }
+  }
+
+  useEffect(() => {
     fetchData();
   }, []);
+
+  // Hủy đăng ký và mở lại đề tài
+  const handleCancel = async (item: Registration) => {
+    const ok = window.confirm(
+      `Hủy đăng ký của "${item.fullName}" và mở lại đề tài:\n${item.topic}?`
+    );
+    if (!ok) return;
+
+    setDeletingId(item.id);
+    try {
+      const res = await fetch('/api/admin/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ registrationId: Number(item.id) }),
+      });
+      if (res.ok) {
+        await fetchData();
+      } else {
+        const d = await res.json().catch(() => ({}));
+        alert('Lỗi: ' + (d.error || 'Không xóa được'));
+      }
+    } catch {
+      alert('Lỗi kết nối.');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const handleExportExcel = async () => {
     setLoading(true);
@@ -96,12 +123,13 @@ export default function AdminPage() {
               <th style={{ padding: '0.75rem 1rem' }}>Email</th>
               <th style={{ padding: '0.75rem 1rem' }}>Đề tài đăng ký</th>
               <th style={{ padding: '0.75rem 1rem' }}>Thời gian</th>
+              <th style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>Hành động</th>
             </tr>
           </thead>
           <tbody>
             {data.length === 0 ? (
               <tr>
-                <td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>
+                <td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>
                   Chưa có dữ liệu đăng ký nào.
                 </td>
               </tr>
@@ -113,6 +141,15 @@ export default function AdminPage() {
                   <td style={{ padding: '0.75rem 1rem' }}>{item.email}</td>
                   <td style={{ padding: '0.75rem 1rem' }}>{item.topic}</td>
                   <td style={{ padding: '0.75rem 1rem' }}>{item.createdAt}</td>
+                  <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
+                    <button
+                      onClick={() => handleCancel(item)}
+                      disabled={deletingId === item.id}
+                      style={{ padding: '0.4rem 0.9rem', backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                    >
+                      {deletingId === item.id ? 'Đang xóa...' : 'Xóa'}
+                    </button>
+                  </td>
                 </tr>
               ))
             )}
