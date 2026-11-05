@@ -1,35 +1,41 @@
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
-export const dynamic = 'force-dynamic';
-
 export async function GET() {
-  const db = supabaseAdmin();
-  
-  // Truy vấn bảng topics và kết nối (join) với bảng teachers để lấy tên giáo viên
-  const { data, error } = await db
+  // Lấy thêm cột category và stt, đồng thời sắp xếp luôn theo STT từ Database
+  const { data, error } = await supabaseAdmin()
     .from('topics')
     .select(`
       id,
       title,
       is_registered,
+      category,
+      stt,
       teachers (
         name
       )
-    `);
+    `)
+    .order('stt', { ascending: true });
 
   if (error) {
-    return NextResponse.json({ error: 'Không tải được danh sách đề tài.' }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // Định dạng lại dữ liệu khớp chính xác với kiểu Topic ở phía frontend
-  const formattedData = (data || []).map((item: any) => ({
-    id: item.id.toString(),
-    category: '', // Có thể để trống nếu không phân loại
-    title: item.title,
-    advisor: item.teachers?.name || 'Chưa phân công',
-    occupied: item.is_registered
-  }));
+  const formatted = data.map((t: any) => {
+    // Xử lý quan hệ bảng (đảm bảo không bị lỗi nếu là mảng hay object)
+    const teacher = Array.isArray(t.teachers) ? t.teachers[0] : t.teachers;
+    
+    return {
+      id: t.id,
+      title: t.title,
+      occupied: t.is_registered,
+      category: t.category || '', // Trả về chuyên ngành
+      stt: t.stt || 0,            // Trả về STT
+      advisor: teacher?.name || 'Chưa rõ',
+    };
+  });
 
-  return NextResponse.json(formattedData, { headers: { 'Cache-Control': 'no-store' } });
+  return NextResponse.json(formatted);
 }
