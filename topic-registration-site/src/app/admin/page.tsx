@@ -1,15 +1,13 @@
 'use client';
-
 import { useEffect, useState } from 'react';
 
-// Định nghĩa kiểu dữ liệu dựa theo Database của bạn
+// Cập nhật Type khớp với dữ liệu bảng
 type Registration = {
   id: number;
   student_name: string;
-  student_code: string;
   email: string;
-  phone: string;
-  topics: {
+  created_at: string;
+  topics?: {
     title: string;
   };
 };
@@ -18,17 +16,13 @@ export default function AdminPage() {
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Hàm tải danh sách sinh viên đã đăng ký
+  // 1. Hàm tải dữ liệu
   async function loadRegistrations() {
     setLoading(true);
     try {
-      // Lưu ý: Đảm bảo bạn đã có API GET /api/registrations để lấy danh sách này
       const res = await fetch('/api/registrations', { cache: 'no-store' });
       if (res.ok) {
-        const data = await res.json();
-        setRegistrations(data);
-      } else {
-        console.error('Lỗi khi tải danh sách');
+        setRegistrations(await res.json());
       }
     } catch (error) {
       console.error('Lỗi kết nối:', error);
@@ -37,98 +31,119 @@ export default function AdminPage() {
     }
   }
 
-  // Tự động tải dữ liệu khi vào trang
   useEffect(() => {
     loadRegistrations();
   }, []);
 
-  // Hàm xử lý khi bấm nút Xóa
+  // 2. Hàm xử lý Xóa & Khôi phục đề tài
   async function handleCancel(registrationId: number) {
-    const confirmDelete = window.confirm(
-      'CẢNH BÁO: Bạn có chắc chắn muốn hủy đăng ký của sinh viên này? Đề tài sẽ tự động được mở lại cho người khác chọn.'
-    );
-    
+    const confirmDelete = window.confirm('Bạn có chắc chắn muốn hủy đăng ký và mở lại đề tài này?');
     if (!confirmDelete) return;
 
     try {
       const res = await fetch('/api/admin/cancel', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ registrationId }), // Chỉ cần gửi registrationId
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ registrationId }),
       });
 
-      const data = await res.json();
-
       if (res.ok) {
-        alert('Thành công: Đã hủy đăng ký và cập nhật đề tài!');
-        // Tải lại danh sách ngay lập tức để cập nhật giao diện
-        loadRegistrations(); 
+        alert('Đã xóa đăng ký thành công!');
+        loadRegistrations(); // Tự động làm mới bảng
       } else {
+        const data = await res.json();
         alert('Lỗi: ' + data.error);
       }
     } catch (err) {
-      alert('Đã xảy ra lỗi kết nối khi gọi API!');
+      alert('Lỗi kết nối API!');
     }
   }
 
+  // Hàm format thời gian giống trong ảnh (VD: 15:03:58 5/11/2026)
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '';
+    const d = new Date(dateString);
+    return `${d.toLocaleTimeString('vi-VN')} ${d.toLocaleDateString('vi-VN')}`;
+  };
+
+  // Hàm placeholder cho các nút chức năng (bạn hãy copy logic cũ đè vào nếu có)
+  const handleExportExcel = () => {
+    alert('Chức năng xuất Excel đang được thực thi...');
+    // Dán code tải file Excel của bạn vào đây
+  };
+
+  const handleLogout = () => {
+    // Dán code đăng xuất (VD: router.push('/login') hoặc xóa token) vào đây
+    window.location.href = '/'; 
+  };
+
   return (
-    <main className="p-8 font-sans">
+    <div className="min-h-screen bg-slate-50 p-8 font-sans">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6">Quản lý Đăng ký Chuyên đề</h1>
-        
-        {loading ? (
-          <p>Đang tải dữ liệu...</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse border border-gray-300">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="border border-gray-300 p-3">STT</th>
-                  <th className="border border-gray-300 p-3">Mã SV</th>
-                  <th className="border border-gray-300 p-3">Họ và Tên</th>
-                  <th className="border border-gray-300 p-3">Liên hệ</th>
-                  <th className="border border-gray-300 p-3">Đề tài đã chọn</th>
-                  <th className="border border-gray-300 p-3 text-center">Hành động</th>
+        {/* Header: Tiêu đề và nút chức năng */}
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-2xl font-bold text-slate-800">Quản lý danh sách đăng ký đề tài</h1>
+          <div className="flex gap-3">
+            <button 
+              onClick={handleExportExcel}
+              className="bg-[#28a745] hover:bg-green-600 text-white px-4 py-2 rounded text-sm font-semibold shadow-sm transition-colors"
+            >
+              Tải file Excel
+            </button>
+            <button 
+              onClick={handleLogout}
+              className="bg-[#dc3545] hover:bg-red-600 text-white px-4 py-2 rounded text-sm font-semibold shadow-sm transition-colors"
+            >
+              Đăng xuất
+            </button>
+          </div>
+        </div>
+
+        {/* Bảng dữ liệu */}
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+          <table className="w-full text-left border-collapse">
+            <thead className="bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th className="p-4 font-semibold text-slate-700 text-sm">ID</th>
+                <th className="p-4 font-semibold text-slate-700 text-sm">Họ tên</th>
+                <th className="p-4 font-semibold text-slate-700 text-sm">Email</th>
+                <th className="p-4 font-semibold text-slate-700 text-sm">Đề tài đăng ký</th>
+                <th className="p-4 font-semibold text-slate-700 text-sm">Thời gian</th>
+                <th className="p-4 font-semibold text-slate-700 text-sm text-center">Hành động</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="p-6 text-center text-slate-500">Đang tải dữ liệu...</td>
                 </tr>
-              </thead>
-              <tbody>
-                {registrations.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="border border-gray-300 p-4 text-center text-gray-500">
-                      Chưa có sinh viên nào đăng ký.
+              ) : registrations.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="p-6 text-center text-slate-500">Chưa có sinh viên nào đăng ký.</td>
+                </tr>
+              ) : (
+                registrations.map((reg) => (
+                  <tr key={reg.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="p-4 text-slate-600 text-sm">{reg.id}</td>
+                    <td className="p-4 text-slate-800 text-sm">{reg.student_name}</td>
+                    <td className="p-4 text-slate-600 text-sm">{reg.email}</td>
+                    <td className="p-4 text-slate-800 text-sm">{reg.topics?.title || 'Không xác định'}</td>
+                    <td className="p-4 text-slate-600 text-sm">{formatDate(reg.created_at)}</td>
+                    <td className="p-4 text-center">
+                      <button
+                        onClick={() => handleCancel(reg.id)}
+                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded text-sm transition-colors shadow-sm"
+                      >
+                        Xóa
+                      </button>
                     </td>
                   </tr>
-                ) : (
-                  registrations.map((reg, index) => (
-                    <tr key={reg.id} className="hover:bg-gray-50">
-                      <td className="border border-gray-300 p-3 text-center">{index + 1}</td>
-                      <td className="border border-gray-300 p-3 font-semibold">{reg.student_code}</td>
-                      <td className="border border-gray-300 p-3">{reg.student_name}</td>
-                      <td className="border border-gray-300 p-3">
-                        <div className="text-sm">{reg.email}</div>
-                        <div className="text-sm text-gray-600">{reg.phone}</div>
-                      </td>
-                      <td className="border border-gray-300 p-3 text-sm">
-                        {reg.topics?.title || 'Đề tài không tồn tại (Lỗi dữ liệu)'}
-                      </td>
-                      <td className="border border-gray-300 p-3 text-center">
-                        <button
-                          onClick={() => handleCancel(reg.id)}
-                          className="bg-red-500 hover:bg-red-600 text-white py-1 px-3 rounded shadow transition-colors text-sm"
-                        >
-                          Hủy đăng ký
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </main>
+    </div>
   );
 }
